@@ -83,10 +83,15 @@ public void setData(String s) {
         return true;
     }
     public static double calc(String text){
-        if(!text.startsWith("=")){
-            throw new IllegalArgumentException("must star with =");
+        if(isNumber(text)){
+            return Double.parseDouble(text);
         }
-        text = text.substring(1).replaceAll("\\s","");
+        if(text.startsWith("=")) {
+            text = text.substring(1);
+        }
+
+
+        text = text.replaceAll("\\s","");
         if(text.contains("(")){
             int openIndex = text.lastIndexOf("(");
             int closeIndex = text.indexOf(")", openIndex);
@@ -145,6 +150,4 @@ public void setData(String s) {
 
 }
 
-// Implement eval (look for help online, google/youtube it 'how to write  java recursion for math equations')
-// implement set data - update the cell type after setting the line (implement isNumber, isText, isForm) the answer will be the type. Once
-// you know the answer, use set type to set the type.
+

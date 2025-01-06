@@ -1,5 +1,8 @@
 package ex2;
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
 // Add your documentation below:
 
 public class Ex2Sheet implements Sheet {
@@ -28,7 +31,7 @@ public class Ex2Sheet implements Sheet {
         if (isIn(x, y)) {
             Cell c = get(x, y);
             if (c != null) {
-                ans = c.toString();
+                ans = eval(x, y);
             }
         }
 
@@ -80,13 +83,12 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         int[][] dd = depth();
         // Add your code here
+        int[][] ans = new int[width()][height()];
         for(int i = 0; i < width(); i++) {
             for(int j = 0; j < height(); j++) {
                 eval(i,j);
             }
         }
-
-
 
         // ///////////////////
     }
@@ -107,6 +109,7 @@ public class Ex2Sheet implements Sheet {
         int[][] ans = new int[width()][height()];
         // Add your code here
 
+
         // ///////////////////
         return ans;
     }
@@ -114,7 +117,6 @@ public class Ex2Sheet implements Sheet {
     @Override
     public void load(String fileName) throws IOException {
         // Add your code here
-
 
         /////////////////////
     }
@@ -129,22 +131,49 @@ public class Ex2Sheet implements Sheet {
     @Override
     public String eval(int x, int y) {
         String ans = null;
-        if (get(x, y) != null) {
-            String data = get(x, y).getData();
+        if (get(x, y) != null){
+            ans=get(x, y).toString();
+        }else {
+            return Ex2Utils.ERR_FORM;
+        }
         // Add your code here
-            if(data != null) {
-                if(SCell.isForm(data)) {
-                    ans = String.valueOf(data);
+        Cell c = get(x, y);
+        if(c != null) {
+            if(c.getType() == Ex2Utils.NUMBER){
+                try{
+                    double num = Double.parseDouble(c.getData());
+                    ans = String.valueOf(num);
+                }catch (Exception e){
+                    ans = Ex2Utils.ERR_FORM;
                 }
-                else {
-                    ans = data;
+            }else if (c.getType() == Ex2Utils.FORM) {
+                try {
+                    String formula = c.getData().substring(1);
+                    for(int col = 0; col < width(); col++) {
+                        for(int row = 0; row < height(); row++) {
+                            String ref = Ex2Utils.ABC[col] + row;
+                            if(formula.contains(ref)) {
+                                String cellVal = eval(col, row);
+                                formula = formula.replace(ref, cellVal);
+                            }
+                        }
+                    }
+
+                    double result = SCell.calc(formula);
+                    ans = String.valueOf(result);
+                }catch (Exception e){
+                    ans = Ex2Utils.ERR_FORM;
                 }
+
+            }else if (c.getType() == Ex2Utils.TEXT) {
+                ans = c.getData();
+            }else {
+                ans =Ex2Utils.EMPTY_CELL;
             }
         }
 
 
-        /////////////////////
+    /////////////////////
         return ans;
     }
-
 }
