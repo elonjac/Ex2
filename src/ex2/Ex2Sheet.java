@@ -1,7 +1,9 @@
 package ex2;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 // Add your documentation below:
 
@@ -70,7 +72,6 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void set(int x, int y, String s) {
-
         // Add your code here
         if(isIn(x, y)) {
             Cell c = new SCell(s);
@@ -108,6 +109,29 @@ public class Ex2Sheet implements Sheet {
     public int[][] depth() {
         int[][] ans = new int[width()][height()];
         // Add your code here
+
+        boolean[][] visit = new boolean[width()][height()];
+        for(int i = 0; i < width(); i++) {
+            for(int j = 0; j < height(); j++) {
+                ans[i][j] = -1;
+                visit[i][j] = false;
+            }
+        }
+        for(int i = 0; i < width(); i++) {
+            for(int j = 0; j < height(); j++) {
+                Cell c = get(i, j);
+                if(c != null) {
+                    if(c.getType() == Ex2Utils.TEXT || c.getType() == Ex2Utils.NUMBER){
+                        ans[i][j] = 0;
+                    }
+                    else if(c.getType() == Ex2Utils.FORM) {
+
+                        ans[i][j] = calcDep(i,j,visit,ans);
+                    }
+                }
+            }
+        }
+
 
 
         // ///////////////////
@@ -176,4 +200,36 @@ public class Ex2Sheet implements Sheet {
     /////////////////////
         return ans;
     }
+    private int calcDep(int i, int j, boolean[][] visit , int[][] ans) {
+        if(visit[i][j]) {
+            return Ex2Utils.ERR_CYCLE_FORM;
+        }
+        visit[i][j] = true;
+        Cell c = get(i, j);
+        if(c.getType() != Ex2Utils.FORM || c == null) {
+            visit[i][j] = false;
+            return 0;
+        }
+        String form = c.getData();
+        List<int[]> refference = SCell.getCellRef(form);
+        int maxDep = 0;
+
+        for(int[] ref : refference) {
+            int refX = ref[0];
+            int refY = ref[1];
+            if(isIn(refX, refY)) {
+                if(ans[refX][refY] == -1) {
+                    ans[refX][refY] = calcDep(refX,refY,visit,ans);
+                }
+                if(ans[refX][refY] == Ex2Utils.ERR_CYCLE_FORM) {
+                    visit[i][j] = false;
+                    return Ex2Utils.ERR_CYCLE_FORM;
+                }
+                maxDep = Math.max(maxDep,ans[refX][refY]);
+            }
+        }
+        visit[i][j] = false;
+        return maxDep + 1;
+    }
 }
+

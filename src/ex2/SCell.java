@@ -2,6 +2,9 @@ package ex2;
 // Add your documentation below:
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SCell implements Cell {
     private String line;
     private int type;
@@ -145,6 +148,36 @@ public void setData(String s) {
         }
         return true;
 
+    }
+    public static List<int[]> getCellRef(String form){
+        List<int[]> ref = new ArrayList<>();
+        String regex ="[A-Za-z]+[0-9]+";
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile(regex);
+        java.util.regex.Matcher m = p.matcher(form);
+        while(m.find()){
+            String cellRef = m.group();
+
+            int[] index = parseCellRef(cellRef);
+            if(index != null){
+                ref.add(index);
+
+            }
+        }
+        return ref;
+    }
+    private static int[] parseCellRef(String cellRef){
+        int column = 0;
+        int row = 0;
+        for(int i=0; i<cellRef.length(); i++){
+            char c = cellRef.charAt(i);
+            if(Character.isDigit(c)){
+                row = Integer.parseInt(cellRef.substring(i));
+                break;
+            }else{
+                column = column * 26 + (Character.toUpperCase(c) - 'A' );
+            }
+        }
+        return new int[]{column , row};
     }
 
 
