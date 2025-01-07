@@ -1,6 +1,7 @@
 package ex2;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 // Add your documentation below:
@@ -49,7 +50,7 @@ public class Ex2Sheet implements Sheet {
         Cell ans = null;
         // Add your code here
         CellEntry cellEntry = new CellEntry(cords);
-        if(cellEntry.isValid()) {
+        if (cellEntry.isValid()) {
             int x = cellEntry.getX();
             int y = cellEntry.getY();
             ans = get(x, y);
@@ -72,7 +73,7 @@ public class Ex2Sheet implements Sheet {
     public void set(int x, int y, String s) {
 
         // Add your code here
-        if(isIn(x, y)) {
+        if (isIn(x, y)) {
             Cell c = new SCell(s);
             table[x][y] = c;
         }
@@ -84,9 +85,9 @@ public class Ex2Sheet implements Sheet {
         int[][] dd = depth();
         // Add your code here
         int[][] ans = new int[width()][height()];
-        for(int i = 0; i < width(); i++) {
-            for(int j = 0; j < height(); j++) {
-                eval(i,j);
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                eval(i, j);
             }
         }
 
@@ -94,7 +95,7 @@ public class Ex2Sheet implements Sheet {
     }
 
     @Override
-    public  boolean isIn(int xx, int yy) {
+    public boolean isIn(int xx, int yy) {
         boolean ans = xx >= 0 && yy >= 0;
         // Add your code here
         if (xx >= table.length || yy >= table[0].length || !ans) {
@@ -106,26 +107,21 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public int[][] depth() {
-        int[][] ans = new int[width()][height()];
         // Add your code here
-        boolean[][] visit = new boolean[width()][height()];
-        for(int i = 0; i < width(); i++) {
-            for(int j = 0; j < height(); j++) {
-                ans[i][j] = -1;
-                visit[i][j] = false;
+        int[][] ans = new int[width()][height()];
+        boolean[][] visited = new boolean[width()][height()];
+        boolean[][] onStack = new boolean[width()][height()];
+
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                ans[i][j] = 0;
             }
         }
-        for(int i = 0; i < width(); i++) {
-            for(int j = 0; j < height(); j++) {
-                Cell c = get(i, j);
-                if(c != null) {
-                    if(c.getType() == Ex2Utils.TEXT || c.getType() == Ex2Utils.NUMBER){
-                        ans[i][j] = 0;
-                    }
-                    else if(c.getType() == Ex2Utils.FORM) {
-
-                        ans[i][j] = calcDep(i,j,visit,ans);
-                    }
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                if (!visited[i][j]) {
+                    // Start depth calculation for cell (i, j)
+                    calcDepth(i, j, ans, visited, onStack);
                 }
             }
         }
@@ -139,6 +135,23 @@ public class Ex2Sheet implements Sheet {
     @Override
     public void load(String fileName) throws IOException {
         // Add your code here
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+        String line;
+        reader.readLine();
+        while ((line = reader.readLine()) != null) {
+            String[] cells = line.split(",",3);
+            if (cells.length >= 3) {
+                try{
+                    int x = Integer.parseInt(cells[0]);
+                    int y = Integer.parseInt(cells[1]);
+                    String s = cells[2];
+                    set(x, y, s);
+                }catch(NumberFormatException e){
+                    continue;
+                }
+            }
+        }
+        reader.close();
 
         /////////////////////
     }
@@ -146,6 +159,17 @@ public class Ex2Sheet implements Sheet {
     @Override
     public void save(String fileName) throws IOException {
         // Add your code here
+        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+        writer.write("I2CS ArielU: SpreadSheet\n");
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                Cell c = get(i, j);
+                if(c != null && !Ex2Utils.EMPTY_CELL.equals(c.getData())){
+                    writer.write(i + "," + j + "," + c.getData() + "\n");
+                }
+            }
+        }
+        writer.close();
 
         /////////////////////
     }
@@ -153,9 +177,9 @@ public class Ex2Sheet implements Sheet {
     @Override
     public String eval(int x, int y) {
         String ans = null;
-        if (get(x, y) != null){
-            ans=get(x, y).toString();
-        }else {
+        if (get(x, y) != null) {
+            ans = get(x, y).toString();
+        } else {
             return Ex2Utils.ERR_FORM;
         }
         // Add your code here
@@ -198,35 +222,39 @@ public class Ex2Sheet implements Sheet {
     /////////////////////
         return ans;
     }
-    private int calcDep(int i, int j, boolean[][] visit , int[][] ans) {
-        if(visit[i][j]) {
-            return Ex2Utils.ERR_CYCLE_FORM;
-        }
-        visit[i][j] = true;
-        Cell c = get(i, j);
-        if(c.getType() != Ex2Utils.FORM || c == null) {
-            visit[i][j] = false;
-            return 0;
-        }
-        String form = c.getData();
-        List<int[]> refference = SCell.getCellRef(form);
-        int maxDep = 0;
 
-        for(int[] ref : refference) {
-            int refX = ref[0];
-            int refY = ref[1];
-            if(isIn(refX, refY)) {
-                if(ans[refX][refY] == -1) {
-                    ans[refX][refY] = calcDep(refX,refY,visit,ans);
+    private boolean calcDepth(int x, int y, int[][] ans, boolean[][] visited, boolean[][] onStack) {
+        if(onStack[x][y]){
+
+            ans[x][y] = -1;
+            return true;
+        }
+        if(visited[x][y]){
+            return false;
+        }
+        visited[x][y] = true;
+        onStack[x][y] = true;
+        Cell c = get(x, y);
+        String data = c != null ? c.getData() : null;
+        if(data.startsWith("=")){
+            String form = data.substring(1);
+            for(int col = 0; col < width(); col++){
+                for(int row = 0; row < height(); row++){
+                    String ref = Ex2Utils.ABC[col] + row;
+                    if (form.contains(ref)) {
+
+                        if(calcDepth(col, row, ans, visited, onStack)){
+                            return true;
+                        }
+                        ans[x][y] = Math.max(ans[x][y],ans[col][row] +1);
+                    }
                 }
-                if(ans[refX][refY] == Ex2Utils.ERR_CYCLE_FORM) {
-                    visit[i][j] = false;
-                    return Ex2Utils.ERR_CYCLE_FORM;
-                }
-                maxDep = Math.max(maxDep,ans[refX][refY]);
             }
         }
-        visit[i][j] = false;
-        return maxDep + 1;
+        else {
+            ans[x][y] = 0;
+        }
+        onStack[x][y] = false;
+        return false;
     }
 }
