@@ -1,9 +1,7 @@
 package ex2;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 // Add your documentation below:
 
@@ -72,6 +70,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void set(int x, int y, String s) {
+
         // Add your code here
         if(isIn(x, y)) {
             Cell c = new SCell(s);
@@ -109,7 +108,6 @@ public class Ex2Sheet implements Sheet {
     public int[][] depth() {
         int[][] ans = new int[width()][height()];
         // Add your code here
-
         boolean[][] visit = new boolean[width()][height()];
         for(int i = 0; i < width(); i++) {
             for(int j = 0; j < height(); j++) {
@@ -232,4 +230,3 @@ public class Ex2Sheet implements Sheet {
         return maxDep + 1;
     }
 }
-

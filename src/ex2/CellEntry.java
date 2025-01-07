@@ -1,7 +1,6 @@
 package ex2;
 // Add your documentation below:
 
-
 public class CellEntry  implements Index2D {
     private int x;
     private int y;
