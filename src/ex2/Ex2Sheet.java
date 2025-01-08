@@ -346,16 +346,16 @@ public class Ex2Sheet implements Sheet {
             if(operChar == '*'){
                 double res = num.get(i) * num.get(i+1);
                 num.set(i,res);
-                num.remove(i+1);
                 oper.remove(i);
+                num.remove(i+1);
                 i--;
             }
 
             if(operChar == '/'){
                 double res = num.get(i) / num.get(i+1);
                 num.set(i,res);
-                num.remove(i+1);
                 oper.remove(i);
+                num.remove(i+1);
                 i--;
             }
         }
@@ -364,16 +364,16 @@ public class Ex2Sheet implements Sheet {
             if(operChar == '+'){
                 double res = num.get(i) + num.get(i+1);
                 num.set(i,res);
-                num.remove(i+1);
                 oper.remove(i);
+                num.remove(i+1);
                 i--;
             }
 
             if(operChar == '-'){
                 double res = num.get(i) - num.get(i+1);
                 num.set(i,res);
-                num.remove(i+1);
                 oper.remove(i);
+                num.remove(i+1);
                 i--;
             }
         }
