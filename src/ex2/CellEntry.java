@@ -13,7 +13,7 @@ public class CellEntry  implements Index2D {
 
     @Override
     public boolean isValid() {
-        if(Character.isLetter(x) && y >= 0 && y<=99 ){
+        if( y >= 0 && y<=99 && Character.isLetter(x) ){
             return true;
         }
         return false;

@@ -175,10 +175,6 @@ public class Ex2Sheet implements Sheet {
         String data = cell.getData();
 
 
-        if(compOrder(data,x,y,new HashSet<>()) == -1) {
-            table[x][y].setType(Ex2Utils.ERR_CYCLE_FORM);
-            return Ex2Utils.ERR_CYCLE;
-        }
 
         if(SCell.isText(data) && !data.startsWith("=") ){
             table[x][y].setType(Ex2Utils.TEXT);
@@ -207,15 +203,21 @@ public class Ex2Sheet implements Sheet {
                 return Ex2Utils.ERR_FORM;
             }
             double res = compForm(data);
-            if(!Double.isInfinite(res)){
-                table[x][y].setType(Ex2Utils.FORM);
-                return String.valueOf(res);
-            }
             if(res == Double.NEGATIVE_INFINITY){
                 return Ex2Utils.ERR_CYCLE;
             }
 
+            if(!Double.isInfinite(res)){
+                table[x][y].setType(Ex2Utils.FORM);
+                return String.valueOf(res);
+            }
 
+
+
+        }
+        if(compOrder(data,x,y,new HashSet<>()) == -1) {
+            table[x][y].setType(Ex2Utils.ERR_CYCLE_FORM);
+            return Ex2Utils.ERR_CYCLE;
         }
 
         table[x][y].setType(Ex2Utils.ERR_FORM_FORMAT);
