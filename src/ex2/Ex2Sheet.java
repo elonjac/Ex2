@@ -2,7 +2,6 @@ package ex2;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 // Add your documentation below:
 
@@ -29,12 +28,16 @@ public class Ex2Sheet implements Sheet {
     public String value(int x, int y) {
         String ans = Ex2Utils.EMPTY_CELL;
         // Add your code here
-        if (isIn(x, y)) {
+
             Cell c = get(x, y);
             if (c != null) {
                 ans = eval(x, y);
+                if(ans == Ex2Utils.ERR_CYCLE) {
+                    table[x][y].setType(Ex2Utils.ERR_CYCLE_FORM);
+
+                }
             }
-        }
+
 
         /////////////////////
         return ans;
@@ -49,11 +52,10 @@ public class Ex2Sheet implements Sheet {
     public Cell get(String cords) {
         Cell ans = null;
         // Add your code here
-        CellEntry cellEntry = new CellEntry(cords);
-        if (cellEntry.isValid()) {
-            int x = cellEntry.getX();
-            int y = cellEntry.getY();
-            ans = get(x, y);
+       if (cords != null){
+           int x = CellEntry.letterToNum(cords.charAt(0));
+           int y = Integer.parseInt(cords.substring(1));
+           ans = get(x, y);
         }
         /////////////////////
         return ans;
@@ -84,7 +86,6 @@ public class Ex2Sheet implements Sheet {
     public void eval() {
         int[][] dd = depth();
         // Add your code here
-        int[][] ans = new int[width()][height()];
         for (int i = 0; i < width(); i++) {
             for (int j = 0; j < height(); j++) {
                 eval(i, j);
@@ -98,7 +99,7 @@ public class Ex2Sheet implements Sheet {
     public boolean isIn(int xx, int yy) {
         boolean ans = xx >= 0 && yy >= 0;
         // Add your code here
-        if (xx >= table.length || yy >= table[0].length || !ans) {
+        if (xx >= width()|| yy >= height()) {
             ans = false;
 
         }
@@ -109,20 +110,11 @@ public class Ex2Sheet implements Sheet {
     public int[][] depth() {
         // Add your code here
         int[][] ans = new int[width()][height()];
-        boolean[][] visited = new boolean[width()][height()];
-        boolean[][] onStack = new boolean[width()][height()];
 
-        for (int i = 0; i < width(); i++) {
-            for (int j = 0; j < height(); j++) {
-                ans[i][j] = 0;
-            }
-        }
-        for (int i = 0; i < width(); i++) {
-            for (int j = 0; j < height(); j++) {
-                if (!visited[i][j]) {
-                    // Start depth calculation for cell (i, j)
-                    calcDepth(i, j, ans, visited, onStack);
-                }
+        for(int i = 0; i < width(); i++) {
+            for(int j = 0; j < height(); j++) {
+                int dep = compOrder(table[i][j].getData(),i,j,new HashSet<>());
+                ans[i][j] = dep;
             }
         }
 
@@ -147,7 +139,7 @@ public class Ex2Sheet implements Sheet {
                     String s = cells[2];
                     set(x, y, s);
                 }catch(NumberFormatException e){
-                    continue;
+
                 }
             }
         }
@@ -176,85 +168,237 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public String eval(int x, int y) {
-        String ans = null;
-        if (get(x, y) != null) {
-            ans = get(x, y).toString();
-        } else {
-            return Ex2Utils.ERR_FORM;
+        Cell cell = get(x, y);
+        if (cell == null || cell.getData().isEmpty() || cell.getData() == null) {
+            return Ex2Utils.EMPTY_CELL;
         }
-        // Add your code here
-        Cell c = get(x, y);
-        if(c != null) {
-            if(c.getType() == Ex2Utils.NUMBER){
-                try{
-                    double num = Double.parseDouble(c.getData());
-                    ans = String.valueOf(num);
-                }catch (Exception e){
-                    ans = Ex2Utils.ERR_FORM;
-                }
-            }else if (c.getType() == Ex2Utils.FORM) {
-                try {
-                    String formula = c.getData().substring(1);
-                    for(int col = 0; col < width(); col++) {
-                        for(int row = 0; row < height(); row++) {
-                            String ref = Ex2Utils.ABC[col] + row;
-                            if(formula.contains(ref)) {
-                                String cellVal = eval(col, row);
-                                formula = formula.replace(ref, cellVal);
-                            }
-                        }
-                    }
+        String data = cell.getData();
 
-                    double result = SCell.calc(formula);
-                    ans = String.valueOf(result);
-                }catch (Exception e){
-                    ans = Ex2Utils.ERR_FORM;
-                }
 
-            }else if (c.getType() == Ex2Utils.TEXT) {
-                ans = c.getData();
-            }else {
-                ans =Ex2Utils.EMPTY_CELL;
+        if(compOrder(data,x,y,new HashSet<>()) == -1) {
+            table[x][y].setType(Ex2Utils.ERR_CYCLE_FORM);
+            return Ex2Utils.ERR_CYCLE;
+        }
+
+        if(SCell.isText(data) && !data.startsWith("=") ){
+            table[x][y].setType(Ex2Utils.TEXT);
+            return data;
+        }
+
+        data = data.replaceAll("\\s+","");
+        if(SCell.isNumber(data)){
+            Double d = Double.parseDouble(data);
+            table[x][y].setType(Ex2Utils.NUMBER);
+            return String.valueOf(d);
+        }
+        data = data.toUpperCase();
+
+
+        if(data.startsWith("(") && data.endsWith(")") && SCell.isNumber(data.substring(1,data.length()-1))){
+            Double dataNum = Double.parseDouble(data.substring(1,data.length()-1));
+            table[x][y].setType(Ex2Utils.NUMBER);
+            return String.valueOf(dataNum);
+        }
+
+
+        if(SCell.isForm(data)){
+            if(hasConsecutiveOperaters(data)){
+                table[x][y].setType(Ex2Utils.ERR_FORM_FORMAT);
+                return Ex2Utils.ERR_FORM;
             }
+            double res = compForm(data);
+            if(!Double.isInfinite(res)){
+                table[x][y].setType(Ex2Utils.FORM);
+                return String.valueOf(res);
+            }
+            if(res == Double.NEGATIVE_INFINITY){
+                return Ex2Utils.ERR_CYCLE;
+            }
+
+
         }
+
+        table[x][y].setType(Ex2Utils.ERR_FORM_FORMAT);
+        return Ex2Utils.ERR_FORM;
+
+
+
 
 
     /////////////////////
-        return ans;
     }
+    private ArrayList<String> dependencies(String form){
 
-    private boolean calcDepth(int x, int y, int[][] ans, boolean[][] visited, boolean[][] onStack) {
-        if(onStack[x][y]){
-
-            ans[x][y] = -1;
-            return true;
+        ArrayList<String> dep = new ArrayList<>();
+        if(form == null ||form == ""){
+            return dep;
         }
-        if(visited[x][y]){
-            return false;
-        }
-        visited[x][y] = true;
-        onStack[x][y] = true;
-        Cell c = get(x, y);
-        String data = c != null ? c.getData() : null;
-        if(data.startsWith("=")){
-            String form = data.substring(1);
-            for(int col = 0; col < width(); col++){
-                for(int row = 0; row < height(); row++){
-                    String ref = Ex2Utils.ABC[col] + row;
-                    if (form.contains(ref)) {
 
-                        if(calcDepth(col, row, ans, visited, onStack)){
-                            return true;
-                        }
-                        ans[x][y] = Math.max(ans[x][y],ans[col][row] +1);
-                    }
-                }
+        if(form.startsWith("=")){
+            form = form.substring(1);
+        }
+
+        String[] split = form.split("[+\\-*/()]");
+        for(int i = 0; i < split.length; i++){
+            if(SCell.isCellRef(split[i])){
+                dep.add(split[i]);
             }
         }
-        else {
-            ans[x][y] = 0;
+        return dep;
+    }
+
+    int compOrder(String text,int x, int y,HashSet<String> used){
+
+        if(text == null ||text.isEmpty()){
+            return 0;
         }
-        onStack[x][y] = false;
+
+        if(SCell.isNumber(text) || SCell.isText(text)){
+            return 0;
+        }
+
+        if(text.startsWith("=")) {
+            text = text.substring(1);
+        }
+
+        String cellRef =(char)('A'+ x) + String.valueOf(y);
+        if(used.contains(cellRef)){
+            return -1;
+        }
+
+        used.add(cellRef);
+        ArrayList<String> dependent = dependencies(text);
+        int maxOrder = 0;
+        for(String dep : dependent){
+            int depX =CellEntry.letterToNum(dep.charAt(0));
+            int depY = Integer.parseInt(dep.substring(1));
+            if(!isIn(depX, depY)){
+                continue;
+            }
+
+            SCell depCell = (SCell)get(depX, depY);
+            int DepOrder = compOrder(depCell.getData(),depX,depY,used);
+            if(DepOrder == -1){
+                return -1;
+            }
+
+            maxOrder = Math.max(maxOrder, DepOrder);
+        }
+
+        used.remove(cellRef);
+        return maxOrder +1;
+
+    }
+    public Double compForm(String text){
+
+        if(text == null || text.isEmpty()){
+            return Double.POSITIVE_INFINITY;
+        }
+
+        if(text.startsWith("=")){
+            text = text.substring(1);
+        }
+
+        if(SCell.isNumber(text)){
+            return Double.parseDouble(text);
+        }
+
+        ArrayList<Character> oper = new ArrayList<>();
+        ArrayList<Double> num = new ArrayList<>();
+        text = text.replaceAll("\\s+","");
+        String[] splitParts = text.split("((?=[-+*/])|(?<=[-+*/]))(?![^()]*\\))");
+
+        for(int i = 0; i < splitParts.length; i++){
+            String part = splitParts[i];
+            if(SCell.isNumber(part)){
+                num.add(Double.parseDouble(part));
+            }
+
+            if(part.startsWith("(")){
+                num.add(compForm(part.substring(1,part.length()-1)));
+            }
+            else if(SCell.isCellRef(part)){
+                int refX = CellEntry.letterToNum(part.charAt(0));
+                int refY = Integer.parseInt(part.substring(1));
+                SCell cell = (SCell)get(part);
+                String cellRef = cell.getData();
+
+                if(compOrder(cellRef,refX,refY,new HashSet<>()) == -1){
+                    return Double.NEGATIVE_INFINITY;
+                }
+
+                String refVal = eval(refX,refY);
+                if(SCell.isNumber(refVal)){
+                    num.add(Double.parseDouble(refVal));
+                }
+                else{
+                    return Double.POSITIVE_INFINITY;
+                }
+            }
+
+            if(part.length() == 1 && isOper(part.charAt(0))){
+                oper.add(part.charAt(0));
+            }
+        }
+
+        for(int i = 0; i < oper.size(); i++){
+            char operChar = oper.get(i);
+            if(operChar == '*'){
+                double res = num.get(i) * num.get(i+1);
+                num.set(i,res);
+                num.remove(i+1);
+                oper.remove(i);
+                i--;
+            }
+
+            if(operChar == '/'){
+                double res = num.get(i) / num.get(i+1);
+                num.set(i,res);
+                num.remove(i+1);
+                oper.remove(i);
+                i--;
+            }
+        }
+        for(int i = 0; i < oper.size(); i++){
+            char operChar = oper.get(i);
+            if(operChar == '+'){
+                double res = num.get(i) + num.get(i+1);
+                num.set(i,res);
+                num.remove(i+1);
+                oper.remove(i);
+                i--;
+            }
+
+            if(operChar == '-'){
+                double res = num.get(i) - num.get(i+1);
+                num.set(i,res);
+                num.remove(i+1);
+                oper.remove(i);
+                i--;
+            }
+        }
+        try{
+            return num.get(0);
+        }catch(Exception e){
+            return Double.POSITIVE_INFINITY;
+        }
+    }
+    public boolean isOper(char operChar){
+
+        if(operChar == '+' || operChar == '-' || operChar == '*' || operChar == '/'){
+            return true;
+        }
+
         return false;
     }
+    public boolean hasConsecutiveOperaters(String text){
+        String oper = "+-*/";
+        for(int i = 0; i < text.length()-1; i++){
+            if(oper.indexOf(text.charAt(i)) != -1 && oper.indexOf(text.charAt(i+1))!= -1){
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

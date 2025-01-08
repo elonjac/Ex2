@@ -2,38 +2,18 @@ package ex2;
 // Add your documentation below:
 
 public class CellEntry  implements Index2D {
-    private int x;
-    private int y;
+    private char x;
+    private char y;
 
-    public CellEntry(String index) {
-        if(index == null || index.isEmpty()) {
-            this.x = Ex2Utils.ERR;
-            this.y = Ex2Utils.ERR;
-        }
-        else{
-            parseIndex(index);
-        }
-    }
-    private void parseIndex(String index) {
-        int col = 0;
-        int i = 0;
-        while (i < index.length() &&Character.isLetter(index.charAt(i))) {
-            col = col * 26 + (Character.toUpperCase(index.charAt(i)) - 'A' +1);
-        }
-        int row = Integer.parseInt(index.substring(i));
-        this.x = col;
-        this.y = row;
-    }
-    private boolean isValidIndex(String index) {
-        if(index != null && index.matches("(?i)[A-Z]+\\d{1,2}")) {
-            return true;
-        }
-        return false;
+    public CellEntry(char x, char y) {
+        this.x = x;
+        this.y = y;
+
     }
 
     @Override
     public boolean isValid() {
-        if(this.x != Ex2Utils.ERR && this.y != Ex2Utils.ERR){
+        if(Character.isLetter(x) && y >= 0 && y<=99 ){
             return true;
         }
         return false;
@@ -41,12 +21,18 @@ public class CellEntry  implements Index2D {
 
     @Override
     public int getX() {
-        return this.x;
+        if(isValid()) {
+            return letterToNum(x);
+        }
+        return Ex2Utils.ERR;
     }
 
     @Override
     public int getY() {
-        return this.y;
+        if(isValid()) {
+            return y;
+        }
+        return Ex2Utils.ERR;
     }
     public String toString() {
         if(!isValid()){
@@ -59,5 +45,9 @@ public class CellEntry  implements Index2D {
             temp = temp / 26;
         }
         return sb + Integer.toString(y);
+    }
+    public static int letterToNum(char c) {
+        c=Character.toUpperCase(c);
+        return c -'A';
     }
 }
