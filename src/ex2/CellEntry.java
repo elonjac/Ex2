@@ -2,10 +2,10 @@ package ex2;
 // Add your documentation below:
 
 public  class CellEntry  implements Index2D {
-    private char x; // column prsented as a letter
-    private char y; // row presented as a number
+    private int x; // column prsented as a letter
+    private int y; // row presented as a number
 
-    public CellEntry(char x, char y) {  // constructer to initialize the cell entry with column x and row y
+    public CellEntry(int x, int y) {  // constructer to initialize the cell entry with column x and row y
         this.x = x;
         this.y = y;
 
@@ -13,7 +13,7 @@ public  class CellEntry  implements Index2D {
 
     @Override
     public boolean isValid() { // checks if the cell entry is valid
-        if( y >= 0 && y<=99 && Character.isLetter(x) ){
+        if( y >= 0 && y<=99 && x>=0 && x<=99 ){
             return true;
         }
         return false;
@@ -22,7 +22,7 @@ public  class CellEntry  implements Index2D {
     @Override
     public int getX() { // get the column
         if(isValid()) {
-            return letterToNum(x); // change it to a number
+            return x; // change it to a number
         }
         return Ex2Utils.ERR;
     }
@@ -38,16 +38,21 @@ public  class CellEntry  implements Index2D {
         if(!isValid()){
             return Ex2Utils.ERR_FORM;
         }
-        StringBuilder sb = new StringBuilder(); // Use StringBuilder for efficient string manipulation
-        int temp = x;  // Temporary variable to hold the column index
-        while(temp > 0){
-            sb.insert(0,(char) ('A' + (temp % 26))); // convert numeric column index to letter
-            temp = temp / 26; // move to the next sigificant digit
-        }
-        return sb + Integer.toString(y); // cobine column and row
+        int temp;// Temporary variable to hold the column index
+        temp = numToLetter(x);  // change num to letter value
+        char letter = (char) temp; //change the letter value to the actual letter
+        return letter + Integer.toString(y); // cobine column and row
     }
     public static int letterToNum(char c) {     // Converts a column letter to numeric index
         c=Character.toUpperCase(c); // convert letter to uppercase
         return c -'A'; // calculate the 0 based number
+    }
+    public static char numToLetter(int x){
+        if(x>=0 && x<=25){
+            return (char) ('A' +x);
+        }
+        else{
+            throw new IllegalArgumentException("input not valid");
+        }
     }
 }
