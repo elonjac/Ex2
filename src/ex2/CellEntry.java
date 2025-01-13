@@ -52,7 +52,7 @@ public  class CellEntry  implements Index2D {
             return (char) ('A' +x);
         }
         else{
-            throw new IllegalArgumentException("input not valid");
+            throw new IllegalArgumentException("input is not valid");
         }
     }
 }
