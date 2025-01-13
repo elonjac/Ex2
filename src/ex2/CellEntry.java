@@ -12,7 +12,7 @@ public  class CellEntry  implements Index2D {
     }
 
     @Override
-    public boolean isValid() { // checks if the cell entry is valid
+    public boolean isValid() { // checks if the cell entry is valid.
         if( y >= 0 && y<=99 && x>=0 && x<=99 ){
             return true;
         }
