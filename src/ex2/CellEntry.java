@@ -5,7 +5,7 @@ public  class CellEntry  implements Index2D {
     private int x; // column prsented as a letter
     private int y; // row presented as a number
 
-    public CellEntry(int x, int y) {  // constructer to initialize the cell entry with column x and row y
+    public CellEntry(int x, int y) {  //  constructer to initialize the cell entry with column x and row y
         this.x = x;
         this.y = y;
 
